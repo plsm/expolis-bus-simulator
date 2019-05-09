@@ -26,6 +26,9 @@ def path (start, end):
             ]
             for feature in response ['features']
         ]
+        for r in routes:
+            r.insert (0, start)
+            r.append (end)
         return routes
     else:
         raise (call.status_code, call.reason)
