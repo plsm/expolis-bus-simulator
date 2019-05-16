@@ -1,4 +1,5 @@
-import copy
+from __future__ import print_function
+
 import csv
 import math
 import random
@@ -10,9 +11,10 @@ import route
 
 STATE_INITIAL = 1001
 STATE_PICK_ROUTE = 1002
-STATE_FIND_PATH_BUS_STOP = 1003
-STATE_DRIVE_BUS_STOP = 1004
-STATE_ENTER_DROP_PASSENGERS = 1005
+STATE_PICK_PATH_ROUTE = 1003
+STATE_FIND_PATH_BUS_STOP = 1004
+STATE_DRIVE_BUS_STOP = 1005
+STATE_ENTER_DROP_PASSENGERS = 1006
 STATE_FINISH = 9999
 
 RADIUS_BUS_STOP_CATCH_AREA = 2
@@ -22,6 +24,7 @@ EPSILON_DISTANCE = 1
 STATE_STRING = {
     STATE_INITIAL : 'Ini' ,
     STATE_PICK_ROUTE : 'PRo',
+    STATE_PICK_PATH_ROUTE : 'PPR',
     STATE_FIND_PATH_BUS_STOP : 'FPS',
     STATE_DRIVE_BUS_STOP : 'DBS',
     STATE_ENTER_DROP_PASSENGERS : 'EDP',
@@ -41,11 +44,14 @@ class Bus:
         self.BUS_STOP_BOARDING_TIME = bus_stop_boarding_time
         self.state = STATE_INITIAL
         self.selected_route = None
+        self.selected_path = None
+        self.doing_up_path = True
         self.path = None
         self.clock = None
         self.state_methods = {
             STATE_INITIAL : self.__state_initial,
             STATE_PICK_ROUTE : self.__state_pick_route,
+            STATE_PICK_PATH_ROUTE : self.__state_pick_path_route,
             STATE_FIND_PATH_BUS_STOP : self.__state_find_path_bus_stop,
             STATE_DRIVE_BUS_STOP : self.__state_drive_bus_stop,
             STATE_ENTER_DROP_PASSENGERS : self.__state_enter_drop_passengers,
@@ -69,15 +75,22 @@ class Bus:
         self.state = STATE_PICK_ROUTE
 
     def __state_pick_route (self):
-        self.selected_route = copy.copy (random.choice (route.ROUTES))
-        if random.randrange (2) == 1:
-            self.selected_route.reverse ()
+        self.selected_route = route.random_route ()
+        print ('Doing route {}'.format (self.selected_route.number))
+        self.state = STATE_PICK_PATH_ROUTE
+
+    def __state_pick_path_route (self):
+        if self.doing_up_path:
+            self.selected_path = self.selected_route.path_up ()
+        else:
+            self.selected_path = self.selected_route.path_down ()
+        self.doing_up_path = not self.doing_up_path
         self.state = STATE_FIND_PATH_BUS_STOP
 
     def __state_find_path_bus_stop (self):
-        candidate_paths = open_route_service.path (self.current_position, self.selected_route [0])
+        candidate_paths = open_route_service.path (self.current_position, self.selected_path [0])
         self.path = random.choice (candidate_paths)
-        print ('Doing path ')
+        print ('Doing path from %s to %s' % (self.current_position, self.selected_path [0]))
         print (self.path)
         self.state = STATE_DRIVE_BUS_STOP
 
@@ -85,14 +98,14 @@ class Bus:
         if len (self.path) > 1:
             print ('At {} from waypoint and {} from bus stop'.format (
                 position.distance (self.current_position, self.path [0]),
-                position.distance (self.current_position, self.selected_route [0])))
+                position.distance (self.current_position, self.selected_path [0])))
         else:
             print ('At {} from bus stop'.format (
-                position.distance (self.current_position, self.selected_route [0])))
-        if position.distance (self.current_position, self.selected_route [0]) < RADIUS_BUS_STOP_CATCH_AREA:
+                position.distance (self.current_position, self.selected_path [0])))
+        if position.distance (self.current_position, self.selected_path [0]) < RADIUS_BUS_STOP_CATCH_AREA:
             self.state = STATE_ENTER_DROP_PASSENGERS
         else:
-            if position.distance (self.current_position, self.path [0]) < EPSILON_DISTANCE:
+            while position.distance (self.current_position, self.path [0]) < EPSILON_DISTANCE:
                 self.path = self.path [1:]
             self.__drive_to (self.path [0])
 
@@ -103,8 +116,8 @@ class Bus:
             pass
         else:
             self.clock = None
-            if len (self.selected_route) > 1:
-                self.selected_route = self.selected_route [1:]
+            if len (self.selected_path) > 1:
+                self.selected_path = self.selected_path [1:]
                 self.state = STATE_FIND_PATH_BUS_STOP
             else:
                 self.state = STATE_FINISH
@@ -130,10 +143,15 @@ class Bus:
             ))
 
     def save_state_TSV (self):
+        (x, y) = self.current_position.to_2D ()
         self.tsv_output [1].writerow ([
             self.current_time,
             self.current_position.latitude,
             self.current_position.longitude,
             self.ID,
             1000,
+            x,
+            y,
+            self.state
         ])
+        self.tsv_output [0].flush ()
