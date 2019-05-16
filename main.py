@@ -1,10 +1,10 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import argparse
 
 import bus
-import open_route_service
-import position
+import route
 
 def process_arguments ():
     parser = argparse.ArgumentParser (
@@ -39,10 +39,19 @@ def process_arguments ():
         metavar = 'R',
         help = 'rate at which data is produced, units in s'
     )
+    parser.add_argument (
+        '--route-data',
+        type = str,
+        default = None,
+        metavar = 'FILENAME',
+        help = 'XML file with route information'
+    )
     return parser.parse_args ()
 
 if __name__ == '__main__':
     args = process_arguments ()
+    if args.route_data is not None:
+        route.read_routes_xml (args.route_data)
     a_bus = bus.Bus (
         start_position = args.start_position,
         velocity = args.velocity,
