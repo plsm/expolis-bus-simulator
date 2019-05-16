@@ -8,7 +8,16 @@ import xml.etree.ElementTree
 
 from position import Position
 
+"""
+Represents a bus route with its up and down paths.
+Currently we support only a single up and down path.
+"""
 class Route:
+    """
+    Constructs a new route with the given up and down paths.
+    If the down path is None it is assumed that the down path is the reverse of the up path.
+    This is suitable for routes whose up and down stops are close by.
+    """
     def __init__ (self, number, up, down = None):
         self.number = number
         self.__up = up
@@ -39,12 +48,32 @@ __ROUTES = {
     999 : Route (999, __TEST_PATH)
 }
 
+"""
+Return a random route.
+"""
 def random_route ():
     return random.choice (__ROUTES.values ())
 
+"""
+Return the route with the given number
+"""
 def get_route (number):
     return __ROUTES [number]
 
+"""
+Reads data from a XML to construct route data.
+The structure of the XML data should consists of route elements.
+
+Each route element must have a number element with an integer, a series of up,
+down and updown elements.
+These elements contain the paths that a bus of the given route do.
+They should have a name element with a string describing the path, and a stops
+element containing a sequence of stop elements.
+Each stop element should have two attributes: lat and lon with the latitude and
+longitude of the stop.
+
+Currently we support only a single up and down path.
+"""
 def read_routes_xml (filename, verbose = False):
     global __ROUTES
     __ROUTES = {}
