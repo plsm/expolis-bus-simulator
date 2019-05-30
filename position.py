@@ -26,6 +26,9 @@ class Position:
     def to_ors (self):
         return '{},{}'.format (self.longitude, self.latitude)
 
+    def t (self):
+        return (self.longitude, self.latitude)
+
     # Performs a projection to a plane and return the XY coordinates
     def to_2D (self):
         return PROJECTION (self.longitude, self.latitude)

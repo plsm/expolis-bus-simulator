@@ -40,6 +40,20 @@ def process_arguments ():
         help = 'rate at which data is produced, units in s'
     )
     parser.add_argument (
+        '--number-trips',
+        type = int,
+        default = 1,
+        metavar = 'N',
+        help = 'the number of trips that a bus does'
+    )
+    parser.add_argument (
+        '--inter-trip-pause',
+        type = float,
+        default = 300.0,
+        metavar = 'T',
+        help = 'how much time the bus waits before starting a new trip or returns to the depot, units in s'
+    )
+    parser.add_argument (
         '--route-data',
         type = str,
         default = None,
@@ -57,5 +71,7 @@ if __name__ == '__main__':
         velocity = args.velocity,
         bus_stop_boarding_time = args.bus_stop_boarding_time,
         data_rate = args.data_rate,
+        number_trips = args.number_trips,
+        inter_trip_pause = args.inter_trip_pause
         )
     a_bus.run ()

@@ -15,6 +15,8 @@ STATE_PICK_PATH_ROUTE = 1003
 STATE_FIND_PATH_BUS_STOP = 1004
 STATE_DRIVE_BUS_STOP = 1005
 STATE_ENTER_DROP_PASSENGERS = 1006
+STATE_INTER_TRIP_PAUSE = 1007
+STATE_RETURN_DEPOT = 1008
 STATE_FINISH = 9999
 
 RADIUS_BUS_STOP_CATCH_AREA = 2
@@ -28,13 +30,15 @@ STATE_STRING = {
     STATE_FIND_PATH_BUS_STOP : 'FPS',
     STATE_DRIVE_BUS_STOP : 'DBS',
     STATE_ENTER_DROP_PASSENGERS : 'EDP',
+    STATE_INTER_TRIP_PAUSE : 'ITP',
+    STATE_RETURN_DEPOT : 'RtD',
     STATE_FINISH : 'Fin'
 }
 
 NUMBER_BUSES = 10
 
 class Bus:
-    def __init__ (self, start_position, velocity, bus_stop_boarding_time, data_rate):
+    def __init__ (self, start_position, velocity, bus_stop_boarding_time, data_rate, number_trips, inter_trip_pause):
         self.ID = random.randrange (NUMBER_BUSES) + 1
         self.ZERO_TIME = time.time ()
         self.current_time = self.ZERO_TIME
@@ -42,6 +46,8 @@ class Bus:
         self.VELOCITY = velocity
         self.DATA_RATE = data_rate
         self.BUS_STOP_BOARDING_TIME = bus_stop_boarding_time
+        self.remaining_trips = number_trips
+        self.INTER_TRIP_PAUSE = inter_trip_pause
         self.state = STATE_INITIAL
         self.selected_route = None
         self.selected_path = None
@@ -55,6 +61,8 @@ class Bus:
             STATE_FIND_PATH_BUS_STOP : self.__state_find_path_bus_stop,
             STATE_DRIVE_BUS_STOP : self.__state_drive_bus_stop,
             STATE_ENTER_DROP_PASSENGERS : self.__state_enter_drop_passengers,
+            STATE_INTER_TRIP_PAUSE : self.__state_inter_trip_pause,
+            STATE_RETURN_DEPOT : self.__state_return_depot,
         }
         tsv_fd = open ('bus-state.tsv', 'w')
         tsv_writer = csv.writer (tsv_fd, delimiter = '\t', quoting = csv.QUOTE_NONNUMERIC)
@@ -120,7 +128,30 @@ class Bus:
                 self.selected_path = self.selected_path [1:]
                 self.state = STATE_FIND_PATH_BUS_STOP
             else:
-                self.state = STATE_FINISH
+                self.state = STATE_INTER_TRIP_PAUSE
+
+    def __state_inter_trip_pause (self):
+        if self.clock is None:
+            self.clock = self.current_time
+        elif self.current_time - self.clock < self.INTER_TRIP_PAUSE:
+            pass
+        else:
+            self.clock = None
+            if self.remaining_trips > 0:
+                self.remaining_trips -= 1
+                self.state = STATE_PICK_PATH_ROUTE
+            else:
+                candidate_paths = open_route_service.path (self.current_position, position.BUS_DEPOT)
+                self.path = random.choice (candidate_paths)
+                self.state = STATE_RETURN_DEPOT
+
+    def __state_return_depot (self):
+        while len (self.path) > 0 and position.distance (self.current_position, self.path [0]) < EPSILON_DISTANCE:
+            self.path = self.path [1:]
+        if len (self.path) > 0:
+            self.__drive_to (self.path [0])
+        else:
+            self.state = STATE_FINISH
 
     def __state_finish (self):
         print ('End state')
@@ -150,8 +181,7 @@ class Bus:
             self.current_position.longitude,
             self.ID,
             1000,
-            x,
-            y,
-            self.state
+#            x,
+#            y,
+#            self.state
         ])
-        self.tsv_output [0].flush ()
