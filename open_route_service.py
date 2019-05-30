@@ -1,9 +1,13 @@
 import json
 import requests
+import sys
+import time
 
 import position
 
 API_KEY = '5b3ce3597851110001cf624837aee23f45014e35aba00a8b77e806c1'
+
+__SLEEP_TIME = 1.0
 
 class NoPathError (StandardError):
     def __init__ (self, start, end, status_code, reason):
@@ -21,6 +25,7 @@ class NoPathError (StandardError):
 # Returns a list of routes between the start and end positions.
 # Uses the open routing service.  The route consists of a list of Position instances.
 def path (start, end):
+    global __SLEEP_TIME
     url = 'https://api.openrouteservice.org/v2/directions/driving-car?api_key={}&start={}&end={}'.format (
         API_KEY,
         start.to_ors (),
@@ -31,6 +36,7 @@ def path (start, end):
     }
     call = requests.get (url, headers = headers)
     if call.status_code == 200:
+        __SLEEP_TIME = 1.0
         response = json.loads (call.text)
         routes = [
             [
@@ -43,5 +49,10 @@ def path (start, end):
             r.insert (0, start)
             r.append (end)
         return routes
+    elif call.status_code == 429:
+        sys.stderr.write ('{}  retrying in {:.1f} seconds...\n'.format (call.reason, __SLEEP_TIME))
+        time.sleep (__SLEEP_TIME)
+        __SLEEP_TIME = __SLEEP_TIME * 1.2
+        return path (start, end)
     else:
         raise NoPathError (start, end, call.status_code, call.reason)
