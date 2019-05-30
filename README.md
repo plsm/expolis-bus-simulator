@@ -51,6 +51,16 @@ The parameter `FILENAME` is the name of a XML file with candidate routes.  Its f
 
 Other parameters affect the bus and sensor behaviours.  Pass the option `--help` to check them.
 
+# output
+
+The simulator creates a tab separated file with bus and sensor data.  The columns of the file contain:
+
+1. the unix timestamp.
+2. the latitude of the bus.
+3. the longitude of the bus.
+4. the identification of the bus.
+5. the sensor reading.
+
 # requirements
 
     apt-get install python-pyproj
