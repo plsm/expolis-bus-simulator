@@ -8,33 +8,42 @@ import xml.etree.ElementTree
 
 from position import Position
 
-"""
-Represents a bus route with its up and down paths.
-Currently we support only a single up and down path.
-"""
 class Route:
     """
-    Constructs a new route with the given up and down paths.
-    If the down path is None it is assumed that the down path is the reverse of the up path.
-    This is suitable for routes whose up and down stops are close by.
+    Represents a bus route with its up and down paths.
+    Currently we support only a single up and down path.
     """
     def __init__ (self, number, up, down = None):
+        """
+        Constructs a new route with the given up and down paths.
+        If the down path is None it is assumed that the down path is the reverse of the up path.
+        This is suitable for routes whose up and down stops are close by.
+
+        :param number:
+        :param up:
+        :param down:
+        """
         self.number = number
         self.__up = up
         if down is None:
             down = copy.copy (up)
             down.reverse ()
         self.__down = down
-    """
-    Returns a list with the positions of the up path of this route.
-    """
+
     def path_up (self):
+        """
+        Returns a list with the positions of the up path of this route.
+        :return: a list with the positions of the up path of this route.
+        """
         return copy.copy (self.__up)
-    """
-    Returns a list with the positions of the down path of this route.
-    """
+
     def path_down (self):
+        """
+        Returns a list with the positions of the down path of this route.
+        :return: a list with the positions of the down path of this route.
+        """
         return copy.copy (self.__down)
+
 
 __TEST_PATH = [
     Position (38.7927517, -9.1216364),
@@ -45,43 +54,52 @@ __TEST_PATH = [
 ]
 
 __ROUTES = {
-    999 : Route (999, __TEST_PATH)
+    999: Route (999, __TEST_PATH)
 }
 
-"""
-Return a random route.
-"""
-def random_route ():
-    return random.choice (__ROUTES.values ())
 
-"""
-Return the route with the given number
-"""
+def random_route ():
+    """
+    Return a random route.
+    :return: a random route.
+    """
+    return random.choice (list (__ROUTES.values ()))
+
+
 def get_route (number):
+    """
+    Return the route with the given number
+    :return: the route with the given number
+    """
     return __ROUTES [number]
 
-"""
-Reads data from a XML to construct route data.
-The structure of the XML data should consists of route elements.
 
-Each route element must have a number element with an integer, a series of up,
-down and updown elements.
-These elements contain the paths that a bus of the given route do.
-They should have a name element with a string describing the path, and a stops
-element containing a sequence of stop elements.
-Each stop element should have two attributes: lat and lon with the latitude and
-longitude of the stop.
-
-Currently we support only a single up and down path.
-"""
 def read_routes_xml (filename, verbose = False):
+    """
+    Reads data from a XML to construct route data.
+    The structure of the XML data should consists of route elements.
+
+    Each route element must have a number element with an integer, a series of up,
+    down and updown elements.
+    These elements contain the paths that a bus of the given route do.
+    They should have a name element with a string describing the path, and a stops
+    element containing a sequence of stop elements.
+    Each stop element should have two attributes: lat and lon with the latitude and
+    longitude of the stop.
+
+    Currently we support only a single up and down path.
+
+    :param filename:
+    :param verbose:
+    :return:
+    """
     global __ROUTES
     __ROUTES = {}
     root = xml.etree.ElementTree.parse (filename)
     for route in root.findall ('route'):
         if len (route.findall ('updown')) > 1 or \
-            len (route.findall ('up')) > 1 or \
-            len (route.findall ('down')) > 1:
+                len (route.findall ('up')) > 1 or \
+                len (route.findall ('down')) > 1:
             print ('Routes with multiple up and down paths are not handled!')
             continue
         number = route.find ('number')
@@ -103,6 +121,7 @@ def read_routes_xml (filename, verbose = False):
             up = __build_path_from_stops (path)
         key = int (number.text)
         __ROUTES [key] = Route (key, up, down)
+
 
 def __build_path_from_stops (up_down_element):
     result = []

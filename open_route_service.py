@@ -9,15 +9,18 @@ API_KEY = '5b3ce3597851110001cf624837aee23f45014e35aba00a8b77e806c1'
 
 __SLEEP_TIME = 1.0
 
+
 class NoPathError (StandardError):
     def __init__ (self, start, end, status_code, reason):
         self.start = start
         self.end = end
         self.status_code = status_code
         self.reason = reason
+
     def __str__ (self):
         return 'No path from {} to {}, server returned {} with {}'.format (
-                self.start, self.end, self.status_code, self.reason)
+            self.start, self.end, self.status_code, self.reason)
+
     def __repr__ (self):
         return str ({'start': self.start, 'end': self.end})
 
@@ -34,16 +37,18 @@ def path (start, end):
     headers = {
         'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
     }
-    call = requests.get (url, headers = headers)
+    call = requests.get (url, headers=headers)
     if call.status_code == 200:
         __SLEEP_TIME = 1.0
         response = json.loads (call.text)
         routes = [
             [
-                position.Position (latitude = p [1], longitude = p [0])
-                for p in feature ['geometry']['coordinates']
+                position.Position (
+                    latitude=p[1],
+                    longitude=p[0])
+                for p in feature['geometry']['coordinates']
             ]
-            for feature in response ['features']
+            for feature in response['features']
         ]
         for r in routes:
             r.insert (0, start)
