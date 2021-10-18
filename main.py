@@ -69,10 +69,10 @@ if __name__ == '__main__':
     if args.route_data is not None:
         route.read_routes_xml (args.route_data)
     a_bus = bus.Bus (
-        start_position=args.start_position,
+        # start_position=args.start_position,
         velocity=args.velocity,
         bus_stop_boarding_time=args.bus_stop_boarding_time,
-        data_rate=args.data_rate,
+        # data_rate=args.data_rate,
         number_trips=args.number_trips,
         inter_trip_pause=args.inter_trip_pause
     )
