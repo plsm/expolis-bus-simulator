@@ -100,11 +100,12 @@ class Bus:
         fx = math.sin ((t - 360) * 2 * math.pi / 1440) + \
             math.exp (-((t - 540) ** 2) / 2 / 60 ** 2) +\
             math.exp (-((t - 1080) ** 2) / 2 / 60 ** 2)
-        gas1 = 6 + 4 * fx
-        gas2 = 7 + 5 * fx
-        pm1 = 10 + 7 * fx
-        pm25 = 9 + 6 * fx
-        pm10 = 12 + 8 * fx
+        gas1 = 6 + 4 * fx + random.randint (-1, 1)
+        gas2 = 7 + 5 * fx + random.randint (-1, 1)
+        pm1 = 10 + 7 * fx + random.randint (-2, 2)
+        pm25 = 9 + 6 * fx + random.randint (-2, 2)
+        pm4 = 5 + 2 * fx + random.randint (-2, 2)
+        pm10 = 12 + 8 * fx + random.randint (-2, 2)
         for variance, amplitude, pollution_center in POLLUTION_HOTSPOTS:
             d = position.distance(self.current_position, pollution_center)
             d2 = d * d
@@ -114,12 +115,18 @@ class Bus:
                 gas2 += 33 * c
                 pm1 += 24 * c
                 pm25 += 21 * c
-        temperature = 21 + 4 * math.cos (now.month * 2 * math.pi / 12) + 4 * math.cos (now.hour * 2 * math.pi / 24)
+                pm4 += 23 * c
+                pm10 += 30 * c
+        temperature = 21 + \
+            4 * math.cos (now.month * 2 * math.pi / 12) + \
+            4 * math.cos (now.hour * 2 * math.pi / 24) + \
+            random.randint (-9, 9) / 10.0
         pressure = 1
         humidity = 50 + \
             20 * math.cos (now.month * 2 * math.pi / 12) + \
             15 * math.cos (now.hour * 2 * math.pi / 24) + \
-            5 * math.cos (self.current_position.latitude)
+            5 * math.cos (self.current_position.latitude) + \
+            random.randint (-19, 19) / 10.0
         gps_error = -1666
         kp = -1666
         kd = -1666
@@ -136,7 +143,9 @@ class Bus:
             gps_error,
             -101,
             kp, kd,
-            0, 0, 0
+            0, 0, 0,
+            pm1, pm25, pm4, pm10,
+            0,
         ]
         message = [str (d) for d in data]
         self.mqtt_client.publish (
